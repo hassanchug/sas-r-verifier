@@ -2,10 +2,11 @@ import pandas as pd
 import pyreadstat
 import numpy as np
 import rpy2.robjects as ro
+import rpy2.robjects as robjects
 from rpy2.robjects import conversion
 from rpy2.robjects.conversion import localconverter
 from rpy2.robjects import pandas2ri
-
+from rpy2 import robjects
 
 def load_sas(path):
     # Reads SAS dataset
@@ -28,6 +29,17 @@ def load_r_rda(path, dataset_name):
 
     return df
 
+def load_r_rds(path):
+    """Load an .rds file into a pandas DataFrame"""
+    readRDS = robjects.r['readRDS']  # R function readRDS
+    r_data = readRDS(path)           # load the R object
+
+    # Convert R dataframe to pandas dataframe
+    with localconverter(robjects.default_converter + pandas2ri.converter):
+        df = robjects.conversion.rpy2py(r_data)
+    return df
+
+
 
 
 def compare_datasets(
@@ -38,7 +50,7 @@ def compare_datasets(
     ignore_row_order=False
 ):
     df_sas = load_sas(sas_path)
-    df_r = load_r_rda(r_path, r_dataset_name)
+    df_r = load_r_rds(r_path)
 
     # Column name check
     if set(df_sas.columns) != set(df_r.columns):
